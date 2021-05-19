@@ -26,27 +26,36 @@ public class DogeSkateboardController : MonoBehaviour
     private bool IsLocked;
     void Update()
     {
-        rigidbody2d.velocity = move;
+        var position = new Vector2();
+        for (int i = 0; i < Input.touchCount; ++i)
+        {
+            
+            if (Input.GetTouch(i).phase == TouchPhase.Began)
+            {
+                position = Input.GetTouch(i).deltaPosition;
+            }
+        }
+                rigidbody2d.velocity = move;
         var moving = false;
         if (IsLocked) return;
       
-        if (Input.GetAxis("Horizontal") > 0)
+        if (Input.GetAxis("Horizontal") > 0 || position.x > 0)
         {
             moving = true;
             move = GoRight();
         }
-        else if (Input.GetAxis("Horizontal") < 0)
+        else if (Input.GetAxis("Horizontal") < 0 || position.x < 0)
         {
             moving = true;
             move = GoLeft();
         }
        
-        if (Input.GetAxis("Vertical") > 0)
+        if (Input.GetAxis("Vertical") > 0|| position.y > 0)
         {
             moving = true;
             move = new Vector3(move.x, speed, 0);
         }
-        else if (Input.GetAxis("Vertical") < 0)
+        else if (Input.GetAxis("Vertical") < 0 || position.y < 0)
         {
             moving = true;
             move = new Vector3(move.x, -speed, 0);
@@ -68,6 +77,14 @@ public class DogeSkateboardController : MonoBehaviour
         IsLocked = false;
     }
 
+    public void ResetCoins()
+    {
+        var coins = Resources.FindObjectsOfTypeAll<Coin>();
+        foreach (var coin in coins)
+        {
+            coin.gameObject.SetActive(true);
+        }
+    }
 
     void FixedUpdate()
     {
@@ -137,9 +154,15 @@ public class DogeSkateboardController : MonoBehaviour
         }
         else if (collision.gameObject.tag == "obstacle")
         {
-            dogeAnimator.Play("ouch");
-            StartCoroutine("HurtCoroutine");
-            move = Vector3.zero;
+            GetHurt();
         }
+    }
+
+    private void GetHurt()
+    {
+        ResetCoins();
+        dogeAnimator.Play("ouch");
+        StartCoroutine("HurtCoroutine");
+        move = Vector3.zero;
     }
 }
