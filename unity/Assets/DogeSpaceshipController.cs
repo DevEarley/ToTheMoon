@@ -1,10 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class DogeSkateboardController : MonoBehaviour
+public class DogeSpaceshipController : MonoBehaviour
 {
     public float WorldPosition = 0;
     public float WorldSpeed = 4.0f;
@@ -14,18 +13,18 @@ public class DogeSkateboardController : MonoBehaviour
     public AudioSource GainCoinAudio;
     public AudioSource LoseCoinAudio;
     public MeshRenderer Bg;
-    public MeshRenderer Bg2;
-    public MeshRenderer Bg3;
-    public MeshRenderer Bg4;
+    //public MeshRenderer Bg2;
+    //public MeshRenderer Bg3;
+    //public MeshRenderer Bg4;
     public GameObject ActorStage;
     public GameObject ObjectStage;
     public GameObject ObjectStage_Far;
     public SpriteRenderer dogeSprite;
     public Animator dogeAnimator;
-    public GameObject LeftBound;
-    public GameObject RightBound;
-    public GameObject RightParticleSystem;
-    public GameObject LeftParticleSystem;
+    public GameObject LowerBound;
+    public GameObject UpperBound;
+    public GameObject UpperParticleSystem;
+    public GameObject LowerParticleSystem;
     public int CoinsCollected;
     public Text Text1;
     public Text Text2;
@@ -47,40 +46,34 @@ public class DogeSkateboardController : MonoBehaviour
         var moving = false;
         if (IsLocked) return;
 
-        if (Input.GetAxis("Horizontal") > 0 || position.x > 0)
-        {
-            moving = true;
-            move = GoRight();
-        }
-        else if (Input.GetAxis("Horizontal") < 0 || position.x < 0)
-        {
-            moving = true;
-            move = GoLeft();
-        }
-
         if (Input.GetAxis("Vertical") > 0 || position.y > 0)
         {
             moving = true;
-            move = new Vector3(move.x, speed, 0);
+            move = GoUp();
         }
         else if (Input.GetAxis("Vertical") < 0 || position.y < 0)
         {
             moving = true;
-            move = new Vector3(move.x, -speed, 0);
+            move = GoDown();
+        }
+
+        if (Input.GetAxis("Horizontal") > 0 || position.x > 0)
+        {
+            moving = true;
+            dogeSprite.flipX = true;
+
+            move = new Vector3(speed, move.y, 0);
+        }
+        else if (Input.GetAxis("Horizontal") < 0 || position.x < 0)
+        {
+            dogeSprite.flipX = false;
+            moving = true;
+            move = new Vector3(-speed, move.y, 0);
         }
 
         if (moving == false)
         {
-            if(CoinsCollected == 24)
-            {
-                dogeAnimator.Play("winning");
-
-            }
-            else
-            {
-                dogeAnimator.Play("idle");
-
-            }
+            dogeAnimator.Play("idle");
         }
         else
         {
@@ -97,40 +90,39 @@ public class DogeSkateboardController : MonoBehaviour
     IEnumerator GoToMoon()
     {
         IsLocked = true;
-        yield return new WaitForSeconds(4);
-        SceneManager.LoadScene("space");
+        yield return new WaitForSeconds(2);
         IsLocked = false;
     }
 
-    IEnumerator LoopLeft()
+    IEnumerator LoopDown()
     {
         IsLocked = true;
         Halted = true;
         yield return new WaitForSeconds(4);
-        WorldPosition = -3500;
-        rigidbody2d.position = new Vector3(0, -1.1f, 0);
-        move = GoRight();
-        LeftBound.SetActive(true);
-        RightBound.SetActive(true);
-        LeftParticleSystem.SetActive(false);
-        RightParticleSystem.SetActive(false);
+        WorldPosition = 0;
+        rigidbody2d.position = new Vector3(0, 0, 0);
+        move = GoUp();
+        LowerBound.SetActive(true);
+        UpperBound.SetActive(true);
+        LowerParticleSystem.SetActive(false);
+        UpperParticleSystem.SetActive(false);
         Halted = false;
         IsLocked = false;
     }
 
-    IEnumerator LoopRight()
+    IEnumerator LoopUp()
     {
         IsLocked = true;
         Halted = true;
         yield return new WaitForSeconds(4);
-        rigidbody2d.position = new Vector3(0, -1.1f, 0);
-        move = GoLeft();
+        rigidbody2d.position = new Vector3(0, 0, 0);
+        move = GoDown();
         IsLocked = false;
-        RightBound.SetActive(true);
-        LeftBound.SetActive(true);
-        WorldPosition = 3500;
-        LeftParticleSystem.SetActive(false);
-        RightParticleSystem.SetActive(false);
+        UpperBound.SetActive(true);
+        LowerBound.SetActive(true);
+        WorldPosition = 9500;
+        LowerParticleSystem.SetActive(false);
+        UpperParticleSystem.SetActive(false);
         Halted = false;
 
     }
@@ -149,85 +141,85 @@ public class DogeSkateboardController : MonoBehaviour
         if (Halted) return;
         AnimateWorld();
 
-        if (WorldPosition <= -3600) // world position.x * 50 . in this case the end is at 71.
+        if (WorldPosition <= -1000) // world position.x * 50 . in this case the end is at 71.
         {
-            WinLeft();
+            WinDown();
         }
-        if (WorldPosition >= 3600)
+        if (WorldPosition >= 10000)
         {
-            WinRight();
+            WinUp();
         }
 
         rigidbody2d.velocity = move;
         if (IsLocked) return;
 
-        if (move.x > 0 && transform.position.x > 0.5f)
+        if (move.y > 0 && transform.position.y > 0.3f)
         {
             WorldPosition += WorldSpeed;
         }
-        if (move.x < 0 && transform.position.x < -0.5f)
+        if (move.y < 0 && transform.position.y < -0.3f)
         {
             WorldPosition -= WorldSpeed;
         }
 
     }
 
-    private void WinLeft()
+    private void WinDown()
     {
         IsLocked = true;
-        LeftBound.SetActive(false);
-        move = GoLeft();
+        LowerBound.SetActive(false);
+        move = GoDown();
         if (CoinsCollected == 24)
         {
-            LeftParticleSystem.SetActive(true);
+            LowerParticleSystem.SetActive(true);
             StartCoroutine("GoToMoon");
         }
         else
         {
-            StartCoroutine("LoopRight");
+            StartCoroutine("LoopUp");
         }
     }
 
-    private void WinRight()
+    private void WinUp()
     {
         //Went all the way to the right
         IsLocked = true;
-        RightBound.SetActive(false);
-        move = GoRight();
+        UpperBound.SetActive(false);
+        move = GoUp();
         if (CoinsCollected == 24)
         {
-            RightParticleSystem.SetActive(true);
+            UpperParticleSystem.SetActive(true);
             StartCoroutine("GoToMoon");
         }
         else
         {
-            StartCoroutine("LoopLeft");
+            StartCoroutine("LoopDown");
         }
     }
 
-    private Vector3 GoRight()
+    private Vector3 GoUp()
     {
-        dogeSprite.flipX = false;
-        return new Vector3(speed, 0, 0);
+        dogeSprite.flipY = false;
+        return new Vector3(0, speed, 0);
 
     }
 
-    private Vector3 GoLeft()
+    private Vector3 GoDown()
     {
-        dogeSprite.flipX = true;
-        return new Vector3(-speed, 0, 0);
+        dogeSprite.flipY = true;
+        return new Vector3(0, -speed, 0);
 
 
     }
     private void AnimateWorld()
     {
-        Bg2.material.SetTextureOffset("_MainTex", new Vector2(WorldPosition / 256.0f, 0));
-        Bg.material.SetTextureOffset("_MainTex", new Vector2(WorldPosition / 1024.0f, 0));
-        Bg3.material.SetTextureOffset("_MainTex", new Vector2(WorldPosition / 10240.0f, 0));
-        Bg4.material.SetTextureOffset("_MainTex", new Vector2(WorldPosition / 2240.0f, 0));
-        ActorStage.transform.position = new Vector3(-WorldPosition / 50.0f, 0, 0);
-        ObjectStage.transform.position = new Vector3(-WorldPosition / 200.0f, 0, 0);
-        ObjectStage_Far.transform.position = new Vector3(-WorldPosition / 512.0f, 0, 0);
+        //  Bg2.material.SetTextureOffset("_MainTex", new Vector2(WorldPosition / 256.0f, 0));
+        Bg.material.SetTextureOffset("_MainTex", new Vector2(0, WorldPosition / 10240.0f));
+        //Bg3.material.SetTextureOffset("_MainTex", new Vector2(WorldPosition / 10240.0f, 0));
+        //Bg4.material.SetTextureOffset("_MainTex", new Vector2(WorldPosition / 2240.0f, 0));
+        ActorStage.transform.position = new Vector3(0, -WorldPosition / 50.0f, 0);
+        ObjectStage.transform.position = new Vector3(0, -WorldPosition / 200.0f, 0);
+        ObjectStage_Far.transform.position = new Vector3(0, -WorldPosition / 512.0f, 0);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
